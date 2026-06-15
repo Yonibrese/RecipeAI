@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-5">
+            <div class="card-body">
+                <h3 class="mb-3">{% if recipe %}Edit Recipe{% else %}Create New Recipe{% endif %}</h3>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        {{ form.as_p }}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h4 class="mb-3">Ingredients</h4>
+                        {{ formset.management_form }}
+
+                        <div id="ingredient-form-list" class="row">
+                            {% for form in formset %}
+                                <div class="ingredient-form-row col-12 mb-3">
+                                    <div class="d-flex gap-2 align-items-center">
+                                        
+                                        {% for hidden in form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+
+                                        {{ form.ingredient }}
+                                        {{ form.quantity }}
+                                        {{ form.unit }}
+                                        
+                                        {% if formset.can_delete %}
+                                            <div class="form-check ms-2">
+                                                {{ form.DELETE }}
+                                                <label class="form-check-label text-danger small">Delete</label>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" id="add-ingredient" class="btn btn-sm btn-outline-primary mb-4">+ Add Another Ingredient</button>
+
+                    <button type="submit" class="btn btn-success mt-4 w-100">Save Recipe</button>
+                    <a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary mt-2 w-100">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const addIngredientBtn = document.getElementById('add-ingredient');
+        const formList = document.getElementById('ingredient-form-list');
+        const totalForms = document.getElementById('id_recipeingredient_set-TOTAL_FORMS');
+
+        addIngredientBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get current form count
+            const currentFormCount = parseInt(totalForms.value);
+            
+            // Clone the first form row as a template
+            const firstFormRow = formList.querySelector('.ingredient-form-row');
+            const newFormRow = firstFormRow.cloneNode(true);
+            
+            // Update the index in names and IDs
+            const inputs = newFormRow.querySelectorAll('input, select');
+            inputs.forEach(function(input) {
+                // Replace '-0-' with the new index
+                if (input.name) {
+                    input.name = input.name.replace('-0-', `-${currentFormCount}-`);
+                    input.id = input.id.replace('-0-', `-${currentFormCount}-`);
+                }
+                
+                // Clear the values of text inputs
+                if (input.type === 'text' || input.type === 'number') {
+                    input.value = '';
+                }
+                // Uncheck checkboxes (like the delete box)
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                }
+                // VERY IMPORTANT: Clear the hidden ID value so Django doesn't overwrite the first item
+                if (input.type === 'hidden' && input.name.endsWith('-id')) {
+                    input.value = '';
+                }
+            });
+            
+            // Append the new row to the UI
+            formList.appendChild(newFormRow);
+            
+            // Increment the management form count
+            totalForms.value = currentFormCount + 1;
+        });
+    });
+</script>
+{% endblock %}
+

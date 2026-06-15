@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="card-title mb-0">{{ recipe.title }}</h2>
+            <div class="d-flex gap-2">
+            {% if user == recipe.author %}
+                <a href="{% url 'recipe_edit' recipe.pk %}" class="btn btn-warning btn-sm">Edit Recipe</a>
+                <form method="post" action="{% url 'recipe_delete' recipe.pk %}" onsubmit="return confirm('Are you sure you want to permanently delete this recipe? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete Recipe</button>
+                </form>
+            {% endif %}
+            </div>
+        </div>
+        <p class="text-muted">By {{ recipe.author.username }} on {{ recipe.created_at|date:"F j, Y" }}</p>
+        <p class="lead">{{ recipe.description }}</p>
+        
+        <hr>
+        
+        <h4>Ingredients</h4>
+        <ul class="list-group mb-4">
+            {% for recipe_ingredient in recipe.recipeingredient_set.all %}
+                <li class="list-group-item">
+                    <strong>
+                        {% if recipe_ingredient.quantity != null %}
+                            {{ recipe_ingredient.quantity }}
+                        {% endif %}
+                        {% if recipe_ingredient.unit != null %}
+                            {{ recipe_ingredient.unit }}
+                        {% endif %}
+                    </strong> 
+                    {{ recipe_ingredient.ingredient.name }}
+                </li>
+            {% empty %}
+                <li class="list-group-item text-muted">No ingredients listed yet.</li>
+            {% endfor %}
+        </ul>
+
+        <h4>Instructions</h4>
+        <p style="white-space: pre-line;">{{ recipe.instructions }}</p>
+    </div>
+</div>
+{% endblock %}

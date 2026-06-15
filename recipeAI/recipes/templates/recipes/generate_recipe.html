@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags != "error" %}{{ message.tags }}{%else%}danger{% endif %} shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close">
+                </div>
+                
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4 text-center">
+                <h3 class="card-title mb-2">✨ AI Fridge Chef</h3>
+                <p class="text-muted small">Tell the AI what you have left over, and it will construct a completely custom recipe database entry instantly.</p>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold">What's in your kitchen?</label>
+                        <textarea name="pantry_input" class="form-control" rows="4" placeholder="e.g., chicken breast, half an onion, stale bread..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        Generate Recipe 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    {% comment %} Initialize close buttons for messages {% endcomment %}
+    addEventListener('DOMContentLoaded', function() {
+        const closeButtons = document.querySelectorAll('.btn-close');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+    });
+</script>
+{% endblock %}

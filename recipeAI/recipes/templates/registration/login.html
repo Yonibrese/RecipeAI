@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4">Welcome Back</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ field.label }}</label>
+                            {{ field.errors }}
+                            <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" class="form-control" required id="{{ field.id_for_label }}">
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Log In</button>
+                </form>
+                <div class="text-center mt-3">
+                    <small>Don't have an account? <a href="{% url 'signup' %}">Sign up here</a>.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
