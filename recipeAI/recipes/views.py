@@ -50,7 +50,7 @@ def recipe_detail(request, pk):
 @login_required
 def recipe_create(request):
     if request.method == 'POST':
-        form = forms.recipeForm(request.POST)
+        form = forms.recipeForm(request.POST, request.FILES)
         formset = forms.recipeIngredientFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
@@ -74,7 +74,7 @@ def recipe_edit(request, pk):
         raise PermissionDenied("You do not have permission to edit this recipe.")
     
     if request.method == 'POST':
-        form = forms.recipeForm(request.POST, instance=recipe)
+        form = forms.recipeForm(request.POST, request.FILES, instance=recipe)
         formset = forms.recipeIngredientFormSet(request.POST, instance=recipe)
         if form.is_valid() and formset.is_valid():
             form.save()

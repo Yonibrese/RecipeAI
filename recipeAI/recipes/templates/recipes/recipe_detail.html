@@ -2,6 +2,9 @@
 
 {% block content %}
 <div class="card shadow-sm mb-4">
+    {% if recipe.image %}
+        <img src="{{ recipe.image.url }}" alt="{{ recipe.title }}" class="card-img-top" style="max-height: 400px; object-fit: cover;">
+    {% endif %}
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="card-title mb-0">{{ recipe.title }}</h2>

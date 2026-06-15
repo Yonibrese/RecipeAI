@@ -14,6 +14,9 @@ class Recipe(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructions = models.TextField()
+
+    image = models.ImageField(upload_to='recipe/', blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
