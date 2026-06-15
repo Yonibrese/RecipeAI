@@ -7,7 +7,7 @@
             <div class="card-body">
                 <h3 class="mb-3">{% if recipe %}Edit Recipe{% else %}Create New Recipe{% endif %}</h3>
                 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     
                     <div class="mb-4">
