@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.forms import inlineformset_factory
 from .ai_services import generate_ai_recipe, professionalize_instructions
-from . import models, forms
+from . import models, forms, filters
 import json
 
 def signup_view(request):
@@ -43,8 +43,10 @@ def logout_view(request):
 
 # Recipe views
 def recipe_list(request):
-    recipes = models.Recipe.objects.all().order_by('-created_at')
-    return render(request, 'recipes/recipe_list.html', {'recipes': recipes})
+   queryset = models.Recipe.objects.all().order_by('category__name', 'title')
+   filter = filters.RecipeFilter(request.GET, queryset=queryset)
+   
+   return render(request, 'recipes/recipe_list.html', {'filter': filter})
 
 def recipe_detail(request, pk):
     recipe = get_object_or_404(models.Recipe, pk=pk)
@@ -73,6 +75,7 @@ def recipe_create(request):
             form = forms.recipeForm(initial={
                 'title': draft.get('title', ''),
                 'description': draft.get('description', ''),
+                'category': draft.get('category', ''),
                 'instructions': draft.get('instructions', '')
             })
 
@@ -95,10 +98,14 @@ def recipe_create(request):
             
             formset = DynamicIngredientFormSet(initial=initial_ingredients)
         else:
-
             form = forms.recipeForm()
             formset = forms.recipeIngredientFormSet()
-    return render(request, 'recipes/recipe_form.html', {'form': form, 'formset': formset})
+        context = {
+            'form': form,
+            'formset': formset,
+            'categories': models.Category.objects.all()
+        }
+    return render(request, 'recipes/recipe_form.html', context)
 
 @login_required
 def recipe_edit(request, pk):
@@ -117,7 +124,14 @@ def recipe_edit(request, pk):
     else:
         form = forms.recipeForm(instance=recipe)
         formset = forms.recipeIngredientFormSet(instance=recipe)
-    return render(request, 'recipes/recipe_form.html', {'form': form, 'formset': formset, 'recipe': recipe})
+    context= {
+        'form': form,
+        'formset': formset,
+        'recipe': recipe,
+        'categories': models.Category.objects.all()
+    }
+
+    return render(request, 'recipes/recipe_form.html', context)
 
 # Delete View
 @login_required
@@ -131,8 +145,8 @@ def recipe_delete(request, pk):
         messages.success(request, "Recipe deleted successfully.")
         return redirect('recipe_list')
     return redirect('recipe_list')
-# AI View
 
+# AI Views
 @login_required
 def ai_recipe_generator(request):
     if request.method == "POST":

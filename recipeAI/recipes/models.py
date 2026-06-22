@@ -9,17 +9,26 @@ class Ingredient(models.Model):
 
     def __repr__(self):
         return self.name
-    
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
 class Recipe(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructions = models.TextField()
 
     image = models.ImageField(upload_to='recipe/', blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
     ingredients = models.ManyToManyField(Ingredient, through='RecipeIngredient')
 
     def __str__(self):
