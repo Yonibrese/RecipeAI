@@ -99,6 +99,68 @@
             totalForms.value = currentFormCount + 1;
         });
     });
+
+    // --- AI Instruction Enhancer Logic ---
+const instructionsField = document.getElementById('id_instructions'); // Django's default ID
+
+if (instructionsField) {
+    // 1. Create the button dynamically
+    const enhanceBtn = document.createElement('button');
+    enhanceBtn.type = 'button';
+    enhanceBtn.className = 'btn btn-sm btn-outline-info mb-2 mt-2';
+    enhanceBtn.innerHTML = '✨ Make Professional (AI)';
+    
+    // Insert the button just before the instructions textarea
+    instructionsField.parentNode.insertBefore(enhanceBtn, instructionsField);
+    
+    // 2. Add the click event listener
+    enhanceBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const rawText = instructionsField.value;
+        if (!rawText.trim()) {
+            alert('Please write some instructions first!');
+            return;
+        }
+        
+        // Change button state to show it's thinking
+        const originalText = enhanceBtn.innerHTML;
+        enhanceBtn.innerHTML = '⏳ Rewriting...';
+        enhanceBtn.disabled = true;
+        
+        // Grab the CSRF token from the hidden input Django generates in the form
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 3. Send the fetch request to our new Django view
+        fetch('{% url "api_enhance_instructions" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ text: rawText })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the textarea with the AI's response
+                instructionsField.value = data.enhanced_text;
+            } else {
+                alert('Error: ' + (data.error || 'Failed to rewrite text.'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('A network error occurred while contacting the AI.');
+        })
+        .finally(() => {
+            // Restore button state
+            enhanceBtn.innerHTML = originalText;
+            enhanceBtn.disabled = false;
+        });
+    });
+}
+
 </script>
 {% endblock %}
 

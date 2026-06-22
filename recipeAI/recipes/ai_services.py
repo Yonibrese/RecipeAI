@@ -42,4 +42,31 @@ def generate_ai_recipe(ingredients_input):
     except Exception as e:
         print(f"Gemini API Error: {e}")
         return None
+
+def professionalize_instructions(raw_text):
+    """
+    Sends raw, messy instructions to Gemini and asks for a professional, 
+    formatted rewrite. Returns plain text.
+    """
+    # Use the same active model you found during the diagnosis step
+    model = genai.GenerativeModel("gemini-3.5-flash")
     
+    prompt = f"""
+    You are an expert culinary editor. Please rewrite the following recipe instructions 
+    to sound highly professional, clear, and appetizing. 
+    Fix any grammar or spelling mistakes. 
+    Format it as clear, step-by-step paragraphs or numbered points.
+    
+    Here are the raw instructions:
+    {raw_text}
+    
+    Return ONLY the rewritten instructions. Do not include introductory or concluding remarks.
+    """
+    
+    try:
+        # Standard text generation (no JSON forcing needed here)
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Gemini API Error (Rewrite): {e}")
+        return None

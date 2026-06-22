@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.forms import inlineformset_factory
-from .ai_services import generate_ai_recipe
+from .ai_services import generate_ai_recipe, professionalize_instructions
 from . import models, forms
+import json
 
 def signup_view(request):
     if request.method == 'POST':
@@ -150,3 +152,20 @@ def ai_recipe_generator(request):
             messages.error(request, "Failed to communicate with AI. Please try again.")
 
     return render(request, "recipes/generate_recipe.html")
+
+@login_required
+def enhance_instructions(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            raw_text = data.get('text','')
+            if not raw_text:
+                return JsonResponse({'error': 'No text provided'}, status=400)
+            enhanced_text = professionalize_instructions(raw_text)
+            if enhanced_text:
+                return JsonResponse({'success': True, 'enhanced_text': enhanced_text})
+            else:
+                return JsonResponse({'error': 'AI failed to process the request'}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid request data'}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
