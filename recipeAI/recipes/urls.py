@@ -13,5 +13,6 @@ urlpatterns = [
     path('recipe/<int:pk>/edit/', views.recipe_edit, name='recipe_edit'),
     path('recipe/<int:pk>/delete/', views.recipe_delete, name='recipe_delete'),
     # AI Path
-    path('recipe/generate/', views.ai_recipe_generator, name='generate_recipe')
+    path('recipe/generate/', views.ai_recipe_generator, name='generate_recipe'),
+    path('recipe/api/enhance-instructions/', views.enhance_instructions, name='api_enhance_instructions')
 ]

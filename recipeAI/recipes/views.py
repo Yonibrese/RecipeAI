@@ -2,10 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from .ai_services import generate_ai_recipe
+from django.forms import inlineformset_factory
+from .ai_services import generate_ai_recipe, professionalize_instructions
 from . import models, forms
+import json
 
 def signup_view(request):
     if request.method == 'POST':
@@ -57,14 +60,44 @@ def recipe_create(request):
             recipe = form.save(commit=False)
             recipe.author = request.user
             recipe.save()
-
             formset.instance = recipe
             formset.save()
 
+            if 'draft_recipe' in request.session:
+                del request.session['draft_recipe']
+
             return redirect('recipe_detail', pk=recipe.pk)
     else:
-        form = forms.recipeForm()
-        formset = forms.recipeIngredientFormSet()
+        draft = request.session.get('draft_recipe')
+        if draft:
+            form = forms.recipeForm(initial={
+                'title': draft.get('title', ''),
+                'description': draft.get('description', ''),
+                'instructions': draft.get('instructions', '')
+            })
+
+            initial_ingredients = []
+
+            for ing in draft.get('ingredients', []):
+                initial_ingredients.append({
+                    'ingredient': ing.get('name', '').strip().title(),
+                    'quantity': ing.get('quantity', ''),
+                    'unit': ing.get('unit', '')
+                })
+            
+            DynamicIngredientFormSet = inlineformset_factory(
+                models.Recipe, 
+                models.RecipeIngredient,
+                form=forms.RecipeIngredientForm,
+                extra=len(initial_ingredients), 
+                can_delete=True
+                )
+            
+            formset = DynamicIngredientFormSet(initial=initial_ingredients)
+        else:
+
+            form = forms.recipeForm()
+            formset = forms.recipeIngredientFormSet()
     return render(request, 'recipes/recipe_form.html', {'form': form, 'formset': formset})
 
 @login_required
@@ -99,6 +132,7 @@ def recipe_delete(request, pk):
         return redirect('recipe_list')
     return redirect('recipe_list')
 # AI View
+
 @login_required
 def ai_recipe_generator(request):
     if request.method == "POST":
@@ -111,32 +145,27 @@ def ai_recipe_generator(request):
         ai_data = generate_ai_recipe(pantry_input)
 
         if ai_data:
-            # 1. Create and save the main parent Recipe object
-            recipe = models.Recipe.objects.create(
-                title=ai_data.get("title", "AI Generated Recipe"),
-                description=ai_data.get("description", ""),
-                instructions=ai_data.get("instructions", ""),
-                author=request.user
-            )
-            # 2. Loop through the ingredients array inside the JSON response
-            for ing in ai_data.get("ingredients", []):
-                name = ing.get("name", "").strip().title()
-                qty = ing.get("quantity", "")
-                unit = ing.get("unit", "")
-
-                if name:
-                    # Leverage get_or_create to maintain clean tables and avoid duplicates
-                    ingredient_obj, _ = models.Ingredient.objects.get_or_create(name=name)
-
-                    models.RecipeIngredient.objects.create(
-                        recipe=recipe,
-                        ingredient=ingredient_obj,
-                        quantity=qty,
-                        unit=unit
-                    )
-            messages.success(request, "Your AI recipe has been created successfully!")
-            return redirect("recipe_edit", pk=recipe.pk)
+            request.session['draft_recipe'] = ai_data
+            messages.success(request, "AI recipe drafted! Please review, edit, and save.")
+            return redirect("recipe_create")
         else:
             messages.error(request, "Failed to communicate with AI. Please try again.")
 
     return render(request, "recipes/generate_recipe.html")
+
+@login_required
+def enhance_instructions(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            raw_text = data.get('text','')
+            if not raw_text:
+                return JsonResponse({'error': 'No text provided'}, status=400)
+            enhanced_text = professionalize_instructions(raw_text)
+            if enhanced_text:
+                return JsonResponse({'success': True, 'enhanced_text': enhanced_text})
+            else:
+                return JsonResponse({'error': 'AI failed to process the request'}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid request data'}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
