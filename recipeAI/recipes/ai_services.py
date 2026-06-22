@@ -20,6 +20,7 @@ def generate_ai_recipe(ingredients_input):
     {{
         "title": "Name of the recipe",
         "description": "A short 1-2 sentence description of the dish",
+        "category": "A short 1-3 word category name (e.g., Chicken Main, Soup, Appetizer, Pasta, Vegetarian)"
         "instructions": "Step-by-step instructions separated by newlines",
         "ingredients": [
             {{"name": "Ingredient Name", "quantity": "amount", "unit": "g/ml/tbsp/pcs/etc"}},
